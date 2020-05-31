@@ -7,103 +7,103 @@ const { placeSearch, placeDetail, mergeOpeningHours, ignoreOpeningHours } = requ
  */
 const doSearch = (req, res, _next) => {
 
-    const parseCoords = (paramsOrQuery) => {
-        const lat = parseFloat(paramsOrQuery.latitude);
-        const lng = parseFloat(paramsOrQuery.longitude);
-        return {
-            lat,
-            lng,
-            valid: isValidCoordinates(lng, lat)
-        }
-    };
-    
-    let coords = {
-        lat: NaN,
-        lng: NaN,
-        valid: false
-    };
-
-    if (req.params.latitude && req.params.longitude) {
-        coords = parseCoords(req.params);
+  const parseCoords = (paramsOrQuery) => {
+    const lat = parseFloat(paramsOrQuery.latitude);
+    const lng = parseFloat(paramsOrQuery.longitude);
+    return {
+      lat,
+      lng,
+      valid: isValidCoordinates(lng, lat)
     }
-    else if (req.query.latitude && req.query.longitude) {
-        coords = parseCoords(req.query);
-    }
+  };
 
-    if (!coords.valid) {
-        return res.sendStatus(400).end();
-    }
+  let coords = {
+    lat: NaN,
+    lng: NaN,
+    valid: false
+  };
 
-    // ASSUMPTION: there is no immediate requirement for customisation of seach criteria
-    /** Place Search parameters */
-    const placeSearchParams = {
-        location: `${coords.lat},${coords.lng}`,
-        radius: 1000,
-        type: 'lodging',
-        keyword: 'surf'
-    };
+  if (req.params.latitude && req.params.longitude) {
+    coords = parseCoords(req.params);
+  }
+  else if (req.query.latitude && req.query.longitude) {
+    coords = parseCoords(req.query);
+  }
 
-    placeSearch(placeSearchParams)
+  if (!coords.valid) {
+    return res.sendStatus(400).end();
+  }
+
+  // ASSUMPTION: there is no immediate requirement for customisation of seach criteria
+  /** Place Search parameters */
+  const placeSearchParams = {
+    location: `${coords.lat},${coords.lng}`,
+    radius: 1000,
+    type: 'lodging',
+    keyword: 'surf'
+  };
+
+  placeSearch(placeSearchParams)
     .then(searchResults => {
 
-        let viewModel = {
-            title: 'Results',
-            latitude: coords.lat,
-            longitude: coords.lng,
-            results: []
+      let viewModel = {
+        title: 'Results',
+        latitude: coords.lat,
+        longitude: coords.lng,
+        results: []
+      };
+
+      /** 
+       * Will contain promises which represent updating the opening hours 
+       * for each result via a Place Details request  
+       */
+      let workToDo = [];
+
+      for (let r of searchResults) {
+
+        /** Place Detail parameters */
+        const placeDetailParams = {
+          placeid: r.place_id
         };
 
-        /** 
-         * Will contain promises which represent updating the opening hours 
-         * for each result via a Place Details request  
-         */
-        let workToDo = [];
+        const task = placeDetail(placeDetailParams)
+          .then(detailResult => {
 
-        for (let r of searchResults) {
+            const successModel = mergeOpeningHours(r, detailResult, coords);
+            viewModel.results.push(successModel);
 
-            /** Place Detail parameters */
-            const placeDetailParams = {
-                placeid: r.place_id
-            };
+          })
+          .catch(_err => {
 
-            const task = placeDetail(placeDetailParams)
-            .then(detailResult => {
+            const errorModel = ignoreOpeningHours(r, coords);
+            viewModel.results.push(errorModel);
 
-                const successModel = mergeOpeningHours(r, detailResult, coords);
-                viewModel.results.push(successModel);
-                            
-            })
-            .catch(_err => {
+          });
 
-                const errorModel = ignoreOpeningHours(r, coords);
-                viewModel.results.push(errorModel);
+        workToDo.push(task);
+      }
 
-            });
+      //throw 'Testing catch clause';
 
-            workToDo.push(task);
-        }
-
-        //throw 'Testing catch clause';
-
-        // When all of the promises have resolved, the view model will be complete
-        Promise.all(workToDo).then(() => {
-            // ASSUMPTION: FontAwesome and Bulma assets are accessible from their own CDN servers
-            res.render('results', viewModel);
-        });
+      // When all of the promises have resolved, the view model will be complete
+      Promise.all(workToDo).then(() => {
+        // ASSUMPTION: FontAwesome and Bulma assets are accessible from their own CDN servers
+        res.render('results', viewModel);
+      });
 
     })
     .catch(err => {
-        let viewModel = {
-            title: 'Error',
-            latitude: coords.lat,
-            longitude: coords.lng,
-            results: [],
-            fatalError: true,
-        };
-        if (err.apiResonseError) {
-            viewModel.errorMessage = err.toString();
-        }
-        res.render('results', viewModel);
+      let viewModel = {
+        title: 'Error',
+        latitude: coords.lat,
+        longitude: coords.lng,
+        results: [],
+        fatalError: true,
+      };
+      if (err.apiResonseError) {
+        viewModel.errorMessage = err.toString();
+      }
+      res.render('results', viewModel);
     });
 }
 

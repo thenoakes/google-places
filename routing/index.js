@@ -8,20 +8,20 @@ webServer.use(express.static(path.join(__dirname, '../wwwroot')));
 
 // Search Routes
 webServer
-    .route('/:latitude/:longitude')
-    .get(doSearch)
+  .route('/:latitude/:longitude')
+  .get(doSearch)
 
 webServer
-    .route('/search')
-    .get(doSearch)
+  .route('/search')
+  .get(doSearch)
 
 
 // Catch-all route
 webServer
-    .get('*', (_req, res, _next) => {
-        res.render('default', {
-            title: 'Instructions'
-        });
+  .get('*', (_req, res, _next) => {
+    res.render('default', {
+      title: 'Instructions'
     });
+  });
 
 module.exports = webServer;

@@ -4,19 +4,19 @@ const geolib = require('geolib');
 
 const getDistance = (latLonA, latLonB) => {
 
-    return geolib.getDistance(
-        {
-            latitude: latLonA[0],
-            longitude: latLonA[1]
-        },
-        {
-            latitude: latLonB[0],
-            longitude: latLonB[1]
-        }
-    );
+  return geolib.getDistance(
+    {
+      latitude: latLonA[0],
+      longitude: latLonA[1]
+    },
+    {
+      latitude: latLonB[0],
+      longitude: latLonB[1]
+    }
+  );
 
 }
 
 module.exports = {
-    getDistance
+  getDistance
 }
