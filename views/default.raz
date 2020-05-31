@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            @Model.title
+        </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+    </head>
+
+    <body>
+
+        <section class="section">
+            <div class="container">
+
+                <div class="columns">
+                    <div class="column"></div>
+
+
+                    <div class="column is-four-fifths">
+                    <p>
+                        To use this application, please use one of the following URLs, or the form below:
+                        <ul>
+                            <li class="is-family-monospace">
+                                /{latitude}/{longitude}
+                            </li>
+                            <li class="is-family-monospace">
+                                /search?latitude={latitude}&longitude={longitude}
+                            </li>
+                        </ul>
+                    </p>
+                    </div>
+
+                    <div class="column"></div>
+                </div>
+
+                <form action="/search" method="GET" enctype="application/x-www-form-urlencoded">
+
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label">Location</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <input class="input" type="text" name="latitude" placeholder="Latitude">
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" name="longitude" placeholder="Longitude">
+                            </div>
+                            <div class="field">
+                                <div class="control">
+                                    <input value="GO" type="submit" class="button is-primary" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+
+            </div>
+        </section>
+
+    </body>
+
+</html>

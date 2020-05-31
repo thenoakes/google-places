@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            @Model.title
+        </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+    </head>
+
+    <body>
+
+        <section class="section">
+            <div class="container">
+
+                <h1 class="title">
+                    @Model.title
+                </h1>
+
+                <div class="field is-grouped">
+                    <div class="control">
+                        <div class="tags has-addons">
+                            <span class="tag is-dark">Latitude</span>
+                            <span class="tag">@Model.latitude</span>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <div class="tags has-addons">
+                            <span class="tag is-dark">Longitude</span>
+                            <span class="tag">@Model.longitude</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="subtitle">
+                    @if (!Model.fatalError) {
+                        Html.raw(Model.results.length + '<span> items</span> <span id="sort-description"></span>')
+                    }
+                    else {
+                        <span class="has-text-danger">@(Model.errorMessage || 'An error occurred.')</span>
+                    }
+                </h2>
+
+                @{
+                    // Hide the table via CSS if there are no rows
+                    const hideIfError = Model.fatalError ? 'display: none' : '';
+                }
+                <nav id="result-sorter" class="level is-mobile" style="@hideIfError">
+                    <p class="level-item has-text-centered">
+                        <a class="link result-sort" data-gp-field="Distance">Closest Distance</a>
+                    </p>
+                    <p class="level-item has-text-centered">
+                        <a class="link result-sort" data-gp-field="Rating">Best Rating</a>
+                    </p>
+                    <p class="level-item has-text-centered">
+                        <a class="link result-sort" data-gp-field="Open">Currently Open</a>
+                    </p>
+                    <p class="level-item has-text-centered">
+                        <a class="link result-sort" data-gp-field="Name">Alphabetical</a>
+                    </p>
+                </nav>
+
+                <div id="search-results">
+
+                @for (let result of Model.results) {
+
+                    <div class="box search-result"
+                        data-gp-rating="@(result.Rating || 0)"
+                        data-gp-open="@(result.OpeningHours.OpenNow ? 1 : 0)"
+                        data-gp-name="@Html.encode(result.Name.toLowerCase())"
+                        data-gp-distance="@result.Distance">
+
+                        <article class="media">
+                            <div class="media-left">
+                                <figure class="image is-64x64">
+                                    <img src="@result.Icon" alt="Icon">
+                                </figure>
+                            </div>
+                            <div class="media-content">
+                                <div class="content">
+                                    <p>
+                                        <strong>
+                                            @result.Name
+                                        </strong>
+                                    </p>
+                                    <p>
+                                    @if (!result.OpeningHours.Known) {
+                                        <span>Opening hours unavailable</span>
+                                    }
+                                    else if (result.OpeningHours.OpenNow) {
+                                        <span class="icon is-small has-text-success">
+                                            <i class="fas fa-door-open" aria-hidden="true"></i>
+                                        </span>
+                                        <span>&nbsp;Currently open</span>
+                                    }
+                                    else {
+                                        <span class="icon is-small has-text-danger">
+                                            <i class="fas fa-door-closed" aria-hidden="true"></i>
+                                        </span>
+                                        <span>&nbsp;Currently closed</span>
+                                    }
+                                    </p>
+                                    @{
+                                        // Hide the table via CSS if there are no rows
+                                        const visibility = result.OpeningHours.Days.length ? '' : 'display: none';
+                                    }
+                                    <table class="table is-striped" style="@visibility">
+                                        <thead>
+                                            <tr>
+                                                <th>Day</th>
+                                                <th>Opens</th>
+                                                <th>Closes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        @for (let p of result.OpeningHours.Days) {
+                                            <tr>
+                                                <td>
+                                                    @p.day
+                                                </td>
+                                                <td>
+                                                    @p.open
+                                                </td>
+                                                <td>
+                                                    @p.close
+                                                </td>
+                                            </tr>
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="level is-mobile">
+                                    <div class="level-left">
+                                        <span class="level-item">
+                                            Rating@(result.Rating ? ': ' + result.Rating : ' unavailable')
+                                        </span>
+                                        @for (let i = 1; i <= parseInt(result.Rating); i++) {
+                                            <span class="level-item">
+                                                <span class="icon is-small has-text-warning">
+                                                <i class="fas fa-star" aria-hidden="true"></i>
+                                                </span>
+                                            </span>
+                                        }
+
+                                        @if (result.Rating - parseInt(result.Rating) >= 0.5) {
+                                            <span class="level-item">
+                                                <span class="icon is-small has-text-warning">
+                                                <i class="fas fa-star-half" aria-hidden="true"></i>
+                                                </span>
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                }
+                </div>
+            </div>
+        </section>
+
+        <script type="text/javascript" src="/scripts/results.js"></script>
+
+    </body>
+
+</html>
