@@ -1,12 +1,16 @@
 const isValidCoordinates = require('is-valid-coordinates');
-const { placeSearch, placeDetail, mergeOpeningHours, ignoreOpeningHours } = require('../google/index');
+const {
+  placeSearch,
+  placeDetail,
+  mergeOpeningHours,
+  ignoreOpeningHours
+} = require('../google/index');
 
-/** 
- * Performs the search for a request to 
- * /{latitude}/{longitude} or /search?latitude={latitude}&longitude={longitude} 
+/**
+ * Performs the search for a request to
+ * /{latitude}/{longitude} or /search?latitude={latitude}&longitude={longitude}
  */
 const doSearch = (req, res, _next) => {
-
   const parseCoords = (paramsOrQuery) => {
     const lat = parseFloat(paramsOrQuery.latitude);
     const lng = parseFloat(paramsOrQuery.longitude);
@@ -14,7 +18,7 @@ const doSearch = (req, res, _next) => {
       lat,
       lng,
       valid: isValidCoordinates(lng, lat)
-    }
+    };
   };
 
   let coords = {
@@ -25,8 +29,7 @@ const doSearch = (req, res, _next) => {
 
   if (req.params.latitude && req.params.longitude) {
     coords = parseCoords(req.params);
-  }
-  else if (req.query.latitude && req.query.longitude) {
+  } else if (req.query.latitude && req.query.longitude) {
     coords = parseCoords(req.query);
   }
 
@@ -44,8 +47,7 @@ const doSearch = (req, res, _next) => {
   };
 
   placeSearch(placeSearchParams)
-    .then(searchResults => {
-
+    .then((searchResults) => {
       let viewModel = {
         title: 'Results',
         latitude: coords.lat,
@@ -53,31 +55,26 @@ const doSearch = (req, res, _next) => {
         results: []
       };
 
-      /** 
-       * Will contain promises which represent updating the opening hours 
-       * for each result via a Place Details request  
+      /**
+       * Will contain promises which represent updating the opening hours
+       * for each result via a Place Details request
        */
       let workToDo = [];
 
       for (let r of searchResults) {
-
         /** Place Detail parameters */
         const placeDetailParams = {
           placeid: r.place_id
         };
 
         const task = placeDetail(placeDetailParams)
-          .then(detailResult => {
-
+          .then((detailResult) => {
             const successModel = mergeOpeningHours(r, detailResult, coords);
             viewModel.results.push(successModel);
-
           })
-          .catch(_err => {
-
+          .catch((_err) => {
             const errorModel = ignoreOpeningHours(r, coords);
             viewModel.results.push(errorModel);
-
           });
 
         workToDo.push(task);
@@ -90,22 +87,20 @@ const doSearch = (req, res, _next) => {
         // ASSUMPTION: FontAwesome and Bulma assets are accessible from their own CDN servers
         res.render('results', viewModel);
       });
-
     })
-    .catch(err => {
+    .catch((err) => {
       let viewModel = {
         title: 'Error',
         latitude: coords.lat,
         longitude: coords.lng,
         results: [],
-        fatalError: true,
+        fatalError: true
       };
       if (err.apiResonseError) {
         viewModel.errorMessage = err.toString();
       }
       res.render('results', viewModel);
     });
-}
-
+};
 
 module.exports = doSearch;
