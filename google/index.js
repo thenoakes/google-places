@@ -19,25 +19,16 @@ const constructRequestUrl = (url, queryParameters) => {
   return `${url}?${serialisedParameters}`;
 };
 
-/** Waits, constructs, sends and appends the results of a Place Search follow-up request  */
-const appendNextResponse = (previousResponses, token) => {
-  const nextPageUrl = constructRequestUrl(URL_SEARCH, {
-    pagetoken: token
-  });
-  return new Promise((resolve) => {
-    // The next page isn't ready for a couple of seconds
-    setTimeout(function () {
-      axios.get(nextPageUrl).then((nextResponse) => {
-        if (nextResponse.data.status === 'OK') {
-          previousResponses.push(nextResponse);
-          resolve(previousResponses);
-        }
-      });
-    }, 2000);
-  });
+const waitForNext = async (pagetoken) => {
+  await new Promise((r) => setTimeout(r, 2000));
+  return await axios.get(
+    constructRequestUrl(URL_SEARCH, {
+      pagetoken
+    })
+  );
 };
 
-const generateApiError = (response) => {
+const handleError = (response) => {
   let errorMessage;
   switch (response.data.status) {
     case 'OK':
@@ -66,7 +57,7 @@ const generateApiError = (response) => {
   let e = new Error(errorMessage);
   e.apiResonseError = true;
 
-  return e;
+  throw e;
 };
 
 // BEGIN EXPORTED FUNCTIONS
@@ -75,47 +66,26 @@ const generateApiError = (response) => {
  * Sends and returns the results of a Place Search request
  * (together with any subsequent pages) with given parameters
  */
-const placeSearch = (parameters) => {
-  // Original request
-  const url = constructRequestUrl(URL_SEARCH, parameters);
+const placeSearch = async (parameters) => {
+  const pages = [];
 
-  // Chain subsequent requests (up to two further results pages) and combine results
-  return axios
-    .get(url)
-    .then((firstPage) => {
-      const apiError = generateApiError(firstPage);
+  const processPage = (page) => {
+    handleError(page);
+    pages.push(page);
+    return page.data.next_page_token;
+  };
 
-      if (apiError) {
-        throw apiError;
-      }
+  // Places API free tier only returns a maximum of 60 results (in three pages)
+  let pagetoken = processPage(
+    await axios.get(constructRequestUrl(URL_SEARCH, parameters))
+  );
+  for (let i = 0; i < 2; i++) {
+    if (pagetoken) {
+      pagetoken = processPage(await waitForNext(pagetoken));
+    }
+  }
 
-      if (firstPage.data.next_page_token) {
-        return appendNextResponse([firstPage], firstPage.data.next_page_token);
-      } else {
-        return [firstPage];
-      }
-    })
-    .then((pages) => {
-      if (pages[pages.length - 1].data.next_page_token) {
-        return appendNextResponse(
-          pages,
-          pages[pages.length - 1].data.next_page_token
-        );
-      } else {
-        return pages;
-      }
-    })
-    .then((pages) => {
-      let r = [];
-      for (let resultSet of pages) {
-        r.push(...resultSet.data.results);
-      }
-      return r;
-    })
-    .catch((err) => {
-      console.error(err);
-      throw err;
-    });
+  return pages.flatMap((p) => p.data.results);
 };
 
 /** Sends and returns the results of a Place Detail request with the given parameters */
