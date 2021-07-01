@@ -89,9 +89,9 @@ const placeSearch = async (parameters) => {
 };
 
 /** Sends and returns the results of a Place Detail request with the given parameters */
-const placeDetail = (parameters) => {
+const placeDetail = async (parameters) => {
   const url = constructRequestUrl(URL_PLACE, parameters);
-  return axios.get(url);
+  return await axios.get(url);
 };
 
 /**
