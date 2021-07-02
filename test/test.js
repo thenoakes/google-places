@@ -5,37 +5,22 @@ chai.use(chaiHttp);
 
 const expressApp = require('../routing/index');
 describe('Express server', function () {
-  it('responds to /', function (done) {
-    chai
-      .request(expressApp)
-      .get('/')
-      .end(function (err, res) {
-        chai.expect(err).to.be.null;
-        chai.expect(res).to.have.status(200);
-        done();
-      });
+  it('responds to /', async function () {
+    const res = await chai.request(expressApp).get('/');
+    chai.expect(res).not.to.throw;
+    chai.expect(res).to.have.status(200);
   });
 
-  it('responds to a valid /latitude/longitude', function (done) {
-    chai
-      .request(expressApp)
-      .get('/41.044278/-71.950577')
-      .end(function (err, res) {
-        chai.expect(err).to.be.null;
-        chai.expect(res).to.have.status(200);
-        done();
-      });
-  });
+  it('responds to a valid /latitude/longitude', async function () {
+    const res = await chai.request(expressApp).get('/41.044278/-71.950577');
+    chai.expect(res).not.to.throw;
+    chai.expect(res).to.have.status(200);
+  }).timeout(6000);
 
-  it('responds to an invalid /latitude/longitude', function (done) {
-    chai
-      .request(expressApp)
-      .get('/lat/lon')
-      .end(function (err, res) {
-        chai.expect(err).to.be.null;
-        chai.expect(res).to.have.status(400);
-        done();
-      });
+  it('responds to an invalid /latitude/longitude', async function () {
+    const res = await chai.request(expressApp).get('/lat/lon');
+    chai.expect(res).not.to.throw;
+    chai.expect(res).to.have.status(400);
   });
 });
 
