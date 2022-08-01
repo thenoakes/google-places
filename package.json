@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "npm install && node index.js",
-    "test": "npm install && mocha"
+    "test": "npm install && mocha",
+    "start-env": "op run --no-masking --env-file .env -- npm start",
+    "test-env": "op run --no-masking --env-file .env -- npm test"
   },
   "keywords": [
     "google",
